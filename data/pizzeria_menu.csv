@@ -1,0 +1,11 @@
+category,name,description,price_usd
+Pizza,Margherita,"Tomato sauce, mozzarella, fresh basil",12.99
+Pizza,Pepperoni,"Tomato sauce, mozzarella, pepperoni",14.99
+Pizza,Hawaiian,"Tomato sauce, mozzarella, ham, pineapple",15.49
+Pizza,BBQ Chicken,"BBQ sauce, mozzarella, grilled chicken, red onion",16.99
+Pizza,Veggie Delight,"Tomato sauce, mozzarella, bell peppers, olives, mushrooms",14.49
+Sides,Garlic Bread,Toasted bread with garlic butter,5.99
+Sides,Chicken Wings,Spicy buffalo wings (8 pcs),9.99
+Drinks,Coca-Cola,12 oz can,2.49
+Drinks,Sparkling Water,16 oz bottle,2.99
+Desserts,Chocolate Brownie,Warm brownie with chocolate chunks,4.99
