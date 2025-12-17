@@ -1,182 +1,20 @@
 from __future__ import annotations
 
 import json
-import csv
-from pathlib import Path
+
 from typing import Annotated, TypedDict, List
 
 from pydantic import BaseModel, Field
 
 from langchain_openai import ChatOpenAI
-from langchain_core.documents import Document
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
-from langchain_core.tools import tool
-from langchain_community.embeddings import SentenceTransformerEmbeddings
-from langchain_community.vectorstores import Chroma
 
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
 
-
-# ----------------------------
-# Tools (заглушки бизнес-логики)
-# ----------------------------
-
-class DeliveryOrderIn(BaseModel):
-    pizza_name: str = Field(..., description="Название пиццы (как у пользователя)")
-    address: str = Field(..., description="Адрес доставки одной строкой")
-
-
-class TableBookingIn(BaseModel):
-    time: str = Field(..., description="Время брони (как у пользователя: '19:30', 'завтра 18:00' и т.п.)")
-    name: str = Field(..., description="Имя бронирующего")
-
-
-@tool("create_delivery_order", args_schema=DeliveryOrderIn, description="Оформить заказ на доставку пиццы")
-def create_delivery_order(pizza_name: str, address: str) -> dict:
-    """Оформить заказ на доставку (заглушка)."""
-    # Тут обычно: создание заказа в БД / вызов сервиса / очереди и т.п.
-    return {"status": "ok", "order_id": "ord_stub_001", "pizza_name": pizza_name, "address": address}
-
-
-@tool("book_table", args_schema=TableBookingIn, description="Забронировать столик в пиццерии")
-def book_table(time: str, name: str) -> dict:
-    """Забронировать столик (заглушка)."""
-    return {"status": "ok", "booking_id": "bk_stub_001", "time": time, "name": name}
-
-
-TOOLS = [create_delivery_order, book_table]
-
-
-# ----------------------------
-# Retrieval-augmented knowledge base
-# ----------------------------
-
-class KnowledgeSearchInput(BaseModel):
-    query: str = Field(..., description="Вопрос или ключевые слова для поиска по меню и отзывам")
-
-
-def _load_documents() -> List[Document]:
-    """
-    Собираем документы из CSV меню и отзывов, чтобы раздать их в Chroma.
-    """
-    root_dir = Path(__file__).resolve().parent.parent
-    data_dir = root_dir / "data"
-
-    documents: List[Document] = []
-
-    menu_path = data_dir / "pizzeria_menu.csv"
-    if menu_path.exists():
-        with menu_path.open(newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                name = row.get("name", "").strip()
-                category = row.get("category", "").strip()
-                description = row.get("description", "").strip()
-                price = row.get("price_usd", "").strip()
-
-                content = (
-                    f"Menu item: {name} (category: {category}). "
-                    f"Description: {description}. Price: ${price} USD."
-                )
-                documents.append(
-                    Document(
-                        page_content=content,
-                        metadata={
-                            "source": "menu",
-                            "name": name,
-                            "category": category,
-                            "price": price,
-                        },
-                    )
-                )
-
-    reviews_path = data_dir / "restaurant_reviews.csv"
-    if reviews_path.exists():
-        with reviews_path.open(newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                title = row.get("Title", "").strip()
-                date = row.get("Date", "").strip()
-                rating = row.get("Rating", "").strip()
-                review_text = row.get("Review", "").strip()
-
-                content = (
-                    f"Review titled '{title}' on {date} rated {rating}/5: {review_text}"
-                )
-                documents.append(
-                    Document(
-                        page_content=content,
-                        metadata={
-                            "source": "review",
-                            "title": title,
-                            "date": date,
-                            "rating": rating,
-                        },
-                    )
-                )
-
-    return documents
-
-
-_retriever = None
-
-
-def _build_retriever():
-    global _retriever
-    if _retriever is not None:
-        return _retriever
-
-    embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-    persist_dir = str(Path(__file__).resolve().parent.parent / "chroma_db")
-
-    vectorstore = Chroma.from_documents(
-        _load_documents(),
-        embedding=embeddings,
-        collection_name="pizzeria-knowledge",
-        persist_directory=persist_dir,
-    )
-    _retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
-    return _retriever
-
-
-@tool(
-    "search_knowledge_base",
-    args_schema=KnowledgeSearchInput,
-    description=(
-        "Поиск по базе знаний меню и отзывов. Используй это, когда нужно ответить на "
-        "вопросы про блюда, цены, состав, популярные позиции, ожидание доставки или впечатления гостей."
-    ),
+from tools import (
+    create_delivery_order, book_table, search_knowledge_base
 )
-def search_knowledge_base(query: str) -> dict:
-    retriever = _build_retriever()
-    docs = retriever.invoke(query)
-
-    results = []
-    for doc in docs:
-        source = doc.metadata.get("source")
-        if source == "menu":
-            results.append(
-                {
-                    "type": "menu",
-                    "name": doc.metadata.get("name"),
-                    "category": doc.metadata.get("category"),
-                    "price_usd": doc.metadata.get("price"),
-                    "detail": doc.page_content,
-                }
-            )
-        else:
-            results.append(
-                {
-                    "type": "review",
-                    "title": doc.metadata.get("title"),
-                    "date": doc.metadata.get("date"),
-                    "rating": doc.metadata.get("rating"),
-                    "detail": doc.page_content,
-                }
-            )
-
-    return {"matches": results}
 
 
 TOOLS = [create_delivery_order, book_table, search_knowledge_base]
@@ -252,9 +90,6 @@ def route_after_llm(state):
 
 
 def tools_node(state: AgentState) -> AgentState:
-    """
-    Исполняем все tool_calls, добавляем ToolMessage(и) в историю.
-    """
     last = state["messages"][-1]
     assert isinstance(last, AIMessage)
 
@@ -267,10 +102,12 @@ def tools_node(state: AgentState) -> AgentState:
             out = create_delivery_order.invoke(args)
         elif name == "book_table":
             out = book_table.invoke(args)
+        elif name == "search_knowledge_base":
+            out = search_knowledge_base.invoke(args)
         else:
             out = {"status": "error", "message": f"Unknown tool: {name}"}
 
-        tool_messages.append(ToolMessage(content=str(out), tool_call_id=call["id"]))
+        tool_messages.append(ToolMessage(content=json.dumps(out, ensure_ascii=False), tool_call_id=call["id"]))
 
     return {"messages": tool_messages}
 
