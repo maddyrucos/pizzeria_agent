@@ -1,10 +1,6 @@
-from __future__ import annotations
-
 import json
 
 from typing import Annotated, TypedDict, List
-
-from pydantic import BaseModel, Field
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
@@ -112,10 +108,6 @@ def tools_node(state: AgentState) -> AgentState:
     return {"messages": tool_messages}
 
 
-# ----------------------------
-# Build graph
-# ----------------------------
-
 def build_app():
     g = StateGraph(AgentState)
     g.add_node("llm", llm_node)
@@ -128,14 +120,15 @@ def build_app():
     return g.compile()
 
 
-# ----------------------------
-# CLI demo
-# ----------------------------
-
-def main():
+def main(state: AgentState) -> AgentState:
     app = build_app()
-    state: AgentState = {"messages": []}
+    return app.invoke({"messages": state["messages"] + [HumanMessage(content=user)]}, config=None)
 
+
+
+if __name__ == "__main__":
+    state: AgentState = {"messages": []}
+    
     while True:
         try:
             user = input("Вы: ").strip()
@@ -145,23 +138,10 @@ def main():
             continue
         if user.lower() in {"exit", "quit"}:
             break
-
-        state = app.invoke({"messages": state["messages"] + [HumanMessage(content=user)]}, config=None)
-        # app.invoke возвращает только новый state; для продолжения диалога сохраняем его
-        # (в данном простом примере state уже содержит историю из add_messages)
-
         
-
-        # Печатаем последнее человекочитаемое сообщение ассистента (не tool)
-        # Обычно это будет последний AIMessage без tool_calls.
-        # for msg in (state["messages"]):
-        #     print(f'DEBUG: msg type: {type(msg)}, content: {msg.content}, tool_calls: {getattr(msg, "tool_calls", None)}')
+        state["messages"] + [HumanMessage(content=user)]
         
-        for msg in reversed(state["messages"]):
-            if isinstance(msg, AIMessage) and not getattr(msg, "tool_calls", None):
-                print("Агент:", msg.content)
-                break
-
-
-if __name__ == "__main__":
-    main()
+        state = main(state)
+        for msg in state["messages"][-1:]:
+            if isinstance(msg, AIMessage):
+                print("Ассистент:", msg.content)
