@@ -3,14 +3,13 @@ from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 
 from pathlib import Path
-
 from typing import List
 import csv
 
 class RAG:
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
         self.embeddings = SentenceTransformerEmbeddings(model_name=model_name)
-        self._retriever = self._build_retriever()
+        self.retriever = self._build_retriever()
 
     def _load_documents(self) -> List[Document]:
         """

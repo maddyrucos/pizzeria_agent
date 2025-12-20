@@ -1,7 +1,7 @@
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from rag import RAG
+from agent.rag import RAG
 
 
 class DeliveryOrderIn(BaseModel):
@@ -38,8 +38,7 @@ class KnowledgeSearchInput(BaseModel):
 )
 def search_knowledge_base(query: str) -> dict:
     rag = RAG()
-    retriever = rag._retriever
-    docs = retriever.invoke(query)
+    docs = rag.retriever.invoke(query)
 
     results = []
     for doc in docs:
