@@ -1,10 +1,13 @@
 from pydantic import BaseModel
+from typing import Optional
         
 class UserCreateSchema(BaseModel):
-    name: str
-    
-    class Config:
-        orm_mode = True
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    mail: Optional[str] = None
+    is_verified: bool = False
+
+    model_config = {"from_attributes": True}
     
 class UserSchema(UserCreateSchema):
     id: int
@@ -15,8 +18,7 @@ class BookingCreateSchema(BaseModel):
     user_id: int
     time: str
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
         
 class BookingSchema(BookingCreateSchema):
     id: int
@@ -24,11 +26,13 @@ class BookingSchema(BookingCreateSchema):
         
           
 class DeliveryCreateSchema(BaseModel):
+    user_id: int
     address: str
+    cart_id: int
+    time: str
     status: str
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
         
 class DeliverySchema(DeliveryCreateSchema):
     id: int        

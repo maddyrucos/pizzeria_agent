@@ -17,7 +17,7 @@ new_session = async_sessionmaker(
     expire_on_commit=False,
 )
 
-async def get_session() -> AsyncSession:
+async def get_session():
     async with new_session() as session:
         yield session
         
@@ -25,5 +25,5 @@ async def get_session() -> AsyncSession:
 async def setup_database():
     async with engine.begin() as conn:
         # Импортируем модели здесь, чтобы зарегистрировать их с метаданными
-        await conn.run_sync(models.Base.metadata.drop)
+        await conn.run_sync(models.Base.metadata.drop_all)
         await conn.run_sync(models.Base.metadata.create_all)

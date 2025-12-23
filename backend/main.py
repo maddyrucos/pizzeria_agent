@@ -2,12 +2,22 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from langchain_core.messages import HumanMessage, AIMessage
-
 from agent.main import build_app
-
 from backend.database import db, models
+from backend.api.router import api
 
-app = FastAPI()
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: setup database
+    
+    await db.setup_database()
+    yield
+    # Shutdown: any cleanup can be done here
+
+app = FastAPI(lifespan=lifespan)
+app.include_router(api)
 
 CHATS = {} # временное хранилище состояний чатов
 

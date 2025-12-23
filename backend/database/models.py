@@ -7,6 +7,44 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     name = Column(String)
+    phone = Column(String)
+    mail = Column(String)
+    is_verified = Column(Integer)  # 0 or 1 for False/True
+    
+    
+    
+class Delivery(Base):
+    __tablename__ = "deliveries"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer)
+    address = Column(String)
+    status = Column(String)
+    cart_id = Column(Integer)
+    time = Column(String)
+    
+    
+class Item(Base):
+    __tablename__ = "items"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    description = Column(String)
+    price = Column(Integer)    
+    
+    
+class Cart(Base):
+    __tablename__ = "carts"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer)
+    items = Column(String)
+    
+    
+    
+class ItemCart(Base):
+    __tablename__ = "item_carts"
+    id = Column(Integer, primary_key=True)
+    cart_id = Column(Integer)
+    item_id = Column(Integer)
+    quantity = Column(Integer)
     
     
 class Booking(Base):
@@ -14,10 +52,3 @@ class Booking(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer)
     time = Column(String)
-    
-    
-class Delivery(Base):
-    __tablename__ = "deliveries"
-    id = Column(Integer, primary_key=True)
-    address = Column(String)
-    status = Column(String)
