@@ -1,12 +1,16 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-
-from langchain_core.messages import HumanMessage, AIMessage
-from agent.main import build_app
-from backend.database import db, models
+from fastapi import FastAPI, Depends
 from backend.api.router import api
+from backend.agent.router import agent
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from backend.database import db, models
 
 from contextlib import asynccontextmanager
+from typing import Annotated
+
+
+
+session_dep = Annotated[AsyncSession, Depends(db.get_session)]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -18,28 +22,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(api)
+app.include_router(agent)
 
-CHATS = {} # временное хранилище состояний чатов
 
-class UserRequest(BaseModel):
-    message: list
-    user_id: str
-
-@app.post("/agent")
-async def agent_endpoint(request: UserRequest):
-    user_id = request.user_id
-    state = CHATS.get(user_id, {"messages": []})
-
-    state = build_app().invoke({"messages": state["messages"] + [HumanMessage(content=msg) for msg in request.message]}, config=None)
-
-    CHATS[user_id] = state
-
-    last_message = state["messages"][-1]
-    if isinstance(last_message, AIMessage):
-        return {"response": last_message.content}
-    else:
-        return {"response": "No response from agent."}
-    
     
 @app.post("/setup_db")
 async def setup_database():

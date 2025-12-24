@@ -1,5 +1,15 @@
 from pydantic import BaseModel
 from typing import Optional
+
+class UserAgentRequest(BaseModel):
+    message: list
+    user_id: str
+        
+        
+class UserAgentResponse(BaseModel):
+    status_code: int
+    response: str
+        
         
 class UserCreateSchema(BaseModel):
     name: Optional[str] = None
