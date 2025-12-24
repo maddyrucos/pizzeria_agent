@@ -22,12 +22,11 @@ async def agent_endpoint(request: UserAgentRequest) -> UserAgentResponse:
     user_id = request.user_id
     state = CHATS.get(user_id, {"messages": []})
 
-    state = build_app().invoke({"messages": state["messages"] + [HumanMessage(content=msg) for msg in request.message]}, config=None)
+    state = await build_app().ainvoke({"messages": state["messages"] + [HumanMessage(content=msg) for msg in request.message]}, config=None)
 
     CHATS[user_id] = state
 
     last_message = state["messages"][-1]
-    print(last_message)
     try:
         if isinstance(last_message, AIMessage):
             return {"status_code": 200, "response": last_message.content}
