@@ -19,7 +19,6 @@ api = APIRouter(
     prefix="/api", tags=["api"],
 )
 
-users = []
 
 @api.get("/users") 
 async def get_users(session: SESSION_DEP) -> List[UserSchema]:

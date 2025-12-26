@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.dialects.postgresql import JSONB
 
 Base = declarative_base()
 
@@ -11,12 +12,17 @@ class User(Base):
     mail = Column(String)
     is_verified = Column(Integer)  # 0 or 1 for False/True
     
+class Chat(Base):
+    __tablename__ = "chats"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    messages = Column(JSONB, nullable=False, default=list)
     
     
 class Delivery(Base):
     __tablename__ = "deliveries"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer)
+    user_id = Column(Integer, ForeignKey("users.id"))
     address = Column(String)
     status = Column(String)
     cart_id = Column(Integer)
@@ -34,7 +40,7 @@ class Item(Base):
 class Cart(Base):
     __tablename__ = "carts"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer)
+    user_id = Column(Integer, ForeignKey("users.id"))
     items = Column(String)
     
     
@@ -50,5 +56,5 @@ class ItemCart(Base):
 class Booking(Base):
     __tablename__ = "bookings"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer)
+    user_id = Column(Integer, ForeignKey("users.id"))
     time = Column(String)

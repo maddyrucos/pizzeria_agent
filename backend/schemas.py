@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 class UserAgentRequest(BaseModel):
+    chat_id: Optional[int]
     message: list
     user_id: str
         
@@ -21,6 +22,12 @@ class UserCreateSchema(BaseModel):
     
 class UserSchema(UserCreateSchema):
     id: int
+    
+ 
+class UserAgentRequest(BaseModel):
+    user_id: int
+    chat_id: Optional[int] = None
+    message: list[str]
     
     
     

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from backend.api.router import api
-from backend.agent.router import agent
+from backend.agent.router import agent, limiter
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.database import db, models
@@ -8,6 +8,8 @@ from backend.database import db, models
 from contextlib import asynccontextmanager
 from typing import Annotated
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 
 session_dep = Annotated[AsyncSession, Depends(db.get_session)]
@@ -22,7 +24,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(api)
+
 app.include_router(agent)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
     
