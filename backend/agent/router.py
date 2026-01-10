@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, Request
 from typing import Optional, Annotated 
 
-from backend.schemas import UserAgentRequest, UserAgentResponse
+from backend.agent.schemas import (
+    UserAgentRequest, UserAgentResponse
+)
 
 from langchain_core.messages import HumanMessage, AIMessage
 from agent.main import build_app
@@ -26,7 +28,6 @@ agent = APIRouter(
     prefix="/agent", tags=["agent"],
 )
 
-CHATS = {} # Временное хранилище
 
 @agent.post("/")
 @limiter.limit("5/minute")
@@ -34,7 +35,7 @@ async def agent_endpoint(
     request: Request,
     payload: UserAgentRequest,
     session: SESSION_DEP,
-) -> dict:
+) -> UserAgentResponse:
     user_id = int(payload.user_id)
     chat_id: Optional[int] = getattr(payload, "chat_id", None)
 

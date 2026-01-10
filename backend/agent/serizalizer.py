@@ -6,7 +6,7 @@ class Serializer:
         result = []
         for m in messages:
             if isinstance(m, HumanMessage):
-                role = "human"
+                role = "human" 
             elif isinstance(m, AIMessage):
                 role = "ai"
             else:

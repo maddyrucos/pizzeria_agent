@@ -2,9 +2,13 @@ from fastapi import APIRouter, Depends
 from typing import List, Annotated 
 
 from backend.schemas import (
-    UserSchema, UserCreateSchema,
     DeliverySchema, DeliveryCreateSchema,
     BookingSchema, BookingCreateSchema,
+    ItemSchema,
+)
+
+from backend.user.schemas import (
+    UserSchema, UserCreateSchema
 )
 
 from backend.database import db, models
@@ -26,7 +30,7 @@ async def get_users(session: SESSION_DEP) -> List[UserSchema]:
     users = result.scalars().all()
     return [UserSchema.from_orm(user) for user in users]
 
-@api.post("/users", response_model=UserSchema)
+@api.post("/users")
 async def create_user(user: UserCreateSchema, session: SESSION_DEP) -> UserSchema:
     new_user = models.User(
         name=user.name,
@@ -39,6 +43,13 @@ async def create_user(user: UserCreateSchema, session: SESSION_DEP) -> UserSchem
     await session.refresh(new_user)
     return UserSchema.model_validate(new_user)
 
+
+@api.get("/menu")
+async def get_menu(session: SESSION_DEP) -> List[ItemSchema]:
+    items = await session.execute(select(models.ItemSchema)).scalars().all()
+    if items:
+        return [ItemSchema(name=item.name, description=item.description, price=str(item.price)) for item in items]
+    return []
 
 
 @api.get("/deliveries") 

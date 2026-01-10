@@ -11,7 +11,7 @@ class User(Base):
     name = Column(String)
     phone = Column(String)
     mail = Column(String)
-    password_hash = Column(String)
+    password = Column(String)
     is_verified = Column(Integer)  # 0 or 1 for False/True
     
     

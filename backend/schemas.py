@@ -1,33 +1,8 @@
 from pydantic import BaseModel
-from typing import Optional
-
-class UserAgentRequest(BaseModel):
-    chat_id: Optional[int]
-    message: list
-    user_id: str
-        
-        
-class UserAgentResponse(BaseModel):
-    status_code: int
-    response: str
-        
-        
-class UserCreateSchema(BaseModel):
-    name: Optional[str] = None
-    phone: Optional[str] = None
-    mail: Optional[str] = None
-    is_verified: bool = False
-
-    model_config = {"from_attributes": True}
-    
-class UserSchema(UserCreateSchema):
-    id: int
-    
- 
-class UserAgentRequest(BaseModel):
-    user_id: int
-    chat_id: Optional[int] = None
-    message: list[str]
+from typing import Annotated
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from backend.database import db    
     
     
     
@@ -54,3 +29,10 @@ class DeliveryCreateSchema(BaseModel):
 class DeliverySchema(DeliveryCreateSchema):
     id: int        
         
+        
+class ItemSchema(BaseModel):
+    name: str
+    description: str
+    price: str  
+    
+Session = Annotated[AsyncSession, Depends(db.get_session)]

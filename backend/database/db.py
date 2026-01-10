@@ -2,7 +2,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from backend.database import models
-
+from collections.abc import AsyncGenerator
 from settings import Settings
 
 settings = Settings()
@@ -27,7 +27,7 @@ new_session = async_sessionmaker(
     expire_on_commit=False,
 )
 
-async def get_session():
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with new_session() as session:
         yield session
         
