@@ -14,7 +14,7 @@ from backend.auth.schemas import Token
 from backend.auth.utils import (
     authenticate_user, create_access_token, get_password_hash
 )
-
+from backend.user.utils import get_user_by_phone
 from datetime import timedelta
 
 
@@ -27,12 +27,14 @@ router = APIRouter(
 
 @router.post("/register", response_model=UserSchema)
 async def register_user(user: Annotated[UserCreateSchema, Depends()], session: Session) -> UserSchema:
-    hashed_password = get_password_hash(user.password)
+    if await get_user_by_phone(session, phone=user.phone):
+        raise HTTPException(status_code=400, detail="Phone number already registered")
+    
     new_user = models.User(
         name=user.name,
         phone=user.phone,
         mail=user.mail,
-        password=hashed_password,
+        password= get_password_hash(user.password),
         is_verified=int(user.is_verified),
     )
     session.add(new_user)
