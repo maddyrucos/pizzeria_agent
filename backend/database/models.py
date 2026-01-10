@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.mutable import MutableList
 
 Base = declarative_base()
 
@@ -10,13 +11,15 @@ class User(Base):
     name = Column(String)
     phone = Column(String)
     mail = Column(String)
+    password_hash = Column(String)
     is_verified = Column(Integer)  # 0 or 1 for False/True
+    
     
 class Chat(Base):
     __tablename__ = "chats"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    messages = Column(JSONB, nullable=False, default=list)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    messages = Column(MutableList.as_mutable(JSONB), nullable=False, default=list)
     
     
 class Delivery(Base):

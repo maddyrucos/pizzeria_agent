@@ -1,13 +1,23 @@
 
 
-from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from backend.database import models
 
-load_dotenv()
+from settings import Settings
+
+settings = Settings()
+
+engine_path = "postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}" \
+                .format(
+                    user=settings.POSTGRES_USER,
+                    password=settings.POSTGRES_PASSWORD,
+                    host=settings.POSTGRES_HOST,
+                    port=settings.POSTGRES_PORT,
+                    db=settings.POSTGRES_DB
+                )
 
 engine = create_async_engine(
-    "postgresql+asyncpg://app:app_password_change_me@localhost:5432/appdb",
+    engine_path,
     echo=True,
 )
 
