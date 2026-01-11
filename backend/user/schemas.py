@@ -1,15 +1,16 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class BaseUserSchema(BaseModel):
-    name: str = None
+    name: Optional[str] = None
     phone: str = None
-    mail: str = None
-    is_verified: bool = False
+    mail: Optional[str] = None
 
     model_config = {"from_attributes": True}
     
 class UserSchema(BaseUserSchema):
     id: int
+    is_verified: int = 0
     
 class UserCreateSchema(BaseUserSchema):
     password: str = None

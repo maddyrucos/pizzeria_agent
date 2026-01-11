@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableList
+from sqlalchemy.orm import Mapped, mapped_column
 
 Base = declarative_base()
 
@@ -19,7 +19,8 @@ class Chat(Base):
     __tablename__ = "chats"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    messages = Column(MutableList.as_mutable(JSONB), nullable=False, default=list)
+    
+    messages: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), default=list, nullable=False)
     
     
 class Delivery(Base):

@@ -1,11 +1,9 @@
-
-
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from backend.database import models
 from collections.abc import AsyncGenerator
-from settings import Settings
+from settings import settings
 
-settings = Settings()
+
 
 engine_path = "postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}" \
                 .format(

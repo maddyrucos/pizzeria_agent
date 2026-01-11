@@ -1,10 +1,12 @@
+from fastapi import HTTPException, Request
+
 from bcrypt import hashpw, gensalt, checkpw
 from backend.user.utils import get_user_by_phone
 from datetime import timedelta, timezone, datetime
 import jwt
-from settings import Settings
+from settings import settings
 
-settings = Settings()
+
 
 def get_password_hash(password: str) -> str:
     return hashpw(password.encode("utf-8"), gensalt()).decode("utf-8")
@@ -33,3 +35,25 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt    
+
+
+def jwt_required(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Unauthenticated")
+
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    if not payload.get("is_verified"):
+        raise HTTPException(status_code=403, detail="User is not verified")
+
+    return payload
