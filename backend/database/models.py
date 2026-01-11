@@ -1,9 +1,23 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, JSON
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Enum as SAEnum,
+    ForeignKey,
+    Integer,
+    String,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship, declarative_base
+
+from datetime import datetime
+from typing import List
+from enum import Enum
 
 Base = declarative_base()
+
+class MessageRole(str, Enum):
+    USER = "user"
+    AI = "ai"
 
 class User(Base):
     __tablename__ = "users"
@@ -17,10 +31,52 @@ class User(Base):
     
 class Chat(Base):
     __tablename__ = "chats"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    
-    messages: Mapped[list] = mapped_column(MutableList.as_mutable(JSON), default=list, nullable=False)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+        index=True,
+    )
+
+    messages: Mapped[List["ChatMessage"]] = relationship(
+        "ChatMessage",
+        back_populates="chat",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="(ChatMessage.created_at, ChatMessage.id)",
+    )
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    chat_id: Mapped[int] = mapped_column(
+        ForeignKey("chats.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    role: Mapped[MessageRole] = mapped_column(
+        SAEnum(MessageRole, name="message_role"),
+        nullable=False,
+        index=True,
+    )
+
+    content: Mapped[str] = mapped_column(String, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+        index=True,
+    )
+
+    chat: Mapped[Chat] = relationship("Chat", back_populates="messages")
     
     
 class Delivery(Base):

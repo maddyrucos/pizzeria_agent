@@ -2,11 +2,13 @@ from pydantic import BaseModel
 from typing import Optional
 
 class UserAgentRequest(BaseModel):
-    chat_id: Optional[int]
-    message: list
+    message: str
     user_id: str
+    chat_id: Optional[int] = None
         
         
 class UserAgentResponse(BaseModel):
     status_code: int
+    chat_id: int
     response: str
+    messages: list

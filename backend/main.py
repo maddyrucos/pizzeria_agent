@@ -1,9 +1,8 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from backend.api.router import api
 from backend.agent.router import agent, limiter
 from backend.auth.router import router as auth_router
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from backend.database import db, models
 
 from contextlib import asynccontextmanager
