@@ -103,7 +103,12 @@ def tools_node(state: AgentState) -> AgentState:
         else:
             out = {"status": "error", "message": f"Unknown tool: {name}"}
 
-        tool_messages.append(ToolMessage(content=json.dumps(out, ensure_ascii=False), tool_call_id=call["id"]))
+        try:
+            content = json.dumps(out, ensure_ascii=False)
+        except Exception as e:
+            content = str(out)
+            print(f"Failed to serialize tool output to JSON: {out!r}\nError: {e}")
+        tool_messages.append(ToolMessage(content=content, tool_call_id=call["id"]))
 
     return {"messages": tool_messages}
 

@@ -3,7 +3,6 @@ from typing import Optional
 
 class UserAgentRequest(BaseModel):
     message: str
-    user_id: str
     chat_id: Optional[int] = None
         
         

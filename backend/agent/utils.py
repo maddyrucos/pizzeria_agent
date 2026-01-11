@@ -14,7 +14,6 @@ async def fetch_chat_messages_raw(
 ) -> list[dict[str, Any]]:
     res = await session.execute(
         select(
-            models.ChatMessage.id,
             models.ChatMessage.role,
             models.ChatMessage.content,
             models.ChatMessage.created_at,
@@ -26,12 +25,11 @@ async def fetch_chat_messages_raw(
 
     return [
         {
-            "id": mid,
             "role": role.value if hasattr(role, "value") else str(role),
             "content": content,
             "created_at": created_at.isoformat() if created_at else None,
         }
-        for mid, role, content, created_at in rows
+        for role, content, created_at in rows if content
     ]
 
 
@@ -50,6 +48,8 @@ async def fetch_chat_messages_langchain(
     for role, content in rows:
         if role == models.MessageRole.USER:
             out.append(HumanMessage(content=content))
-        else:
+        elif role == models.MessageRole.AI:
             out.append(AIMessage(content=content))
+        else:
+            continue
     return out

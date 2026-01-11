@@ -1,25 +1,22 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from typing import Optional, Annotated 
 
-from backend.agent.schemas import (
-    UserAgentRequest, UserAgentResponse
-)
-
 from langchain_core.messages import HumanMessage, AIMessage
 from agent.main import build_app
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from backend.database import db, models
 from sqlalchemy.future import select
+
+from backend.agent.schemas import UserAgentRequest, UserAgentResponse
+from backend.auth.utils import jwt_required
+from backend.user.utils import get_user_by_phone
+from backend.agent.utils import fetch_chat_messages_langchain, fetch_chat_messages_raw
+from backend.schemas import Session
+from backend.database import models
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-
-from backend.auth.utils import jwt_required
-from backend.user.utils import get_user_by_phone
-
-from backend.agent.utils import fetch_chat_messages_langchain, fetch_chat_messages_raw
+import logging
 
 
 
@@ -29,13 +26,12 @@ agent = APIRouter(
     prefix="/agent", tags=["agent"],
 )
 
-
 @agent.post("/")
 @limiter.limit("5/minute")
 async def agent_endpoint(
     request: Request,
-    payload: UserAgentRequest,
-    session: Annotated[AsyncSession, Depends(db.get_session)],
+    payload: Annotated[UserAgentRequest, Depends()],
+    session: Session,
     jwt_payload: Annotated[dict, Depends(jwt_required)],
 ) -> UserAgentResponse:
     user = await get_user_by_phone(session, phone=jwt_payload.get("phone"))
@@ -69,7 +65,11 @@ async def agent_endpoint(
 
     history = await fetch_chat_messages_langchain(session, chat_id)
 
-    state = await build_app().ainvoke({"messages": history}, config=None)
+    try:
+        state = await build_app().ainvoke({"messages": history}, config=None)
+    except Exception as e:
+        logging.error(f"Agent processing failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Agent processing failed.")
 
     messages = state.get("messages") or []
     last_message = messages[-1] if messages else None
@@ -83,6 +83,7 @@ async def agent_endpoint(
             role = models.MessageRole.AI
             content = msg.content
         else:
+            logging.info(f"Skipping unsupported message type: {msg!r}")
             continue
 
         session.add(
